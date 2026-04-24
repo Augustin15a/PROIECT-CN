@@ -1,39 +1,33 @@
-`include "FF_D.v"
-`include "FACWP.v"
-
-module Counter(
-    input  clk,
-    input  rst,
-    input  enable,
-    output [1:0] q,
-    output done
+`include "MUX.v"
+module FF_D(
+	input  rst,clk,
+	input d,
+	input enable,
+	output q
 );
 
-wire [1:0] d;
-wire carry0;
-wire p0, p1;
+wire result_mux,result_rst,not_clk;
+not(not_clk,clk);
 
-FACWP fa0(
-    .x       (q[0]),
-    .y       (enable),
-    .carryIn (1'b0),
-    .z       (d[0]),
-    .carryOut(carry0),
-    .p       (p0)
+MUX2_1 reset_gate(
+        .x(d),
+        .y(1'b0),
+        .sel(rst),
+        .out(result_rst),
+        .enable(1'b1)
+    );
+MUX2_1 mux(
+	.x(result_mux),
+	.y(result_rst),
+	.sel(not_clk),
+	.out(result_mux),
+	.enable(enable)
 );
-
-FACWP fa1(
-    .x       (q[1]),
-    .y       (1'b0),
-    .carryIn (carry0),
-    .z       (d[1]),
-    .carryOut(),
-    .p       (p1)
+MUX2_1 mux1(
+	.x(q),
+	.y(result_mux),
+	.sel(clk),
+	.out(q),
+	.enable(enable)
 );
-
-FF_D ff0(.clk(clk), .rst(rst), .d(d[0]), .enable(1'b1), .q(q[0]));
-FF_D ff1(.clk(clk), .rst(rst), .d(d[1]), .enable(1'b1), .q(q[1]));
-
-and(done, q[1], q[0]);
-
 endmodule

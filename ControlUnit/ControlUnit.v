@@ -11,6 +11,9 @@ module ControlUnit(
     input [8:0]reg_A,
     input cnt_done_mul,
     input cnt_done_div,
+    input x_is_zero,
+    input y_is_zero,
+    input y_is_one,
 
     output reg_A_load,
     output reg_A_enable,
@@ -20,6 +23,10 @@ module ControlUnit(
     output reg_Q_enable,
     output reg_Q_shift2_right,
     output reg_Q_shift_left,
+
+    output reg_Qneg_load,
+    output reg_Qneg_enable,
+    output reg_Qneg_shift_left,
 	
     output reg_M_load,
     output reg_M_enable,
@@ -31,7 +38,8 @@ module ControlUnit(
     output zero,
     output pos,
 
-    output quot_bit,
+    output quot_pos_bit,
+    output quot_neg_bit,
     output load_phase,
     output done,
 
@@ -46,6 +54,15 @@ wire op_is_as,op_is_mul,op_is_div;
 buf(op_is_as,not_op[1]);
 and(op_is_mul,op[1],not_op[0]);
 and(op_is_div,op[1],op[0]);
+
+// detectie cazuri speciale 0 si 1
+wire early_exit, mul_early, div_early;
+or(mul_early, x_is_zero, y_is_zero);
+or(div_early, x_is_zero, y_is_one);
+wire tr_mul_early, tr_div_early;
+and(tr_mul_early, op_is_mul, mul_early);
+and(tr_div_early, op_is_div, div_early);
+or(early_exit, tr_mul_early, tr_div_early);
 
 //fsm pe 3 biti
 wire [2:0] stare;
@@ -68,9 +85,10 @@ and(stare_div_comp,stare[2],not_stare[1],stare[0]);
 and(stare_div_restore,stare[2],stare[1],not_stare[0]);
 and(stare_done,stare[2],stare[1],stare[0]);
 
-wire not_cnt_done_mul,not_cnt_done_div;
+wire not_cnt_done_mul,not_cnt_done_div,not_early_exit;
 not(not_cnt_done_mul,cnt_done_mul);
 not(not_cnt_done_div,cnt_done_div);
+not(not_early_exit, early_exit);
 
 wire not_a_msb;
 not(not_a_msb,a_msb);
@@ -100,39 +118,40 @@ buf(pos, q_pos);
 
 // next_stare[0]
 wire tranz_idle, tranz_load_mul, tranz_mul_done;
-wire tranz_div_shift_comp,tranz_div_restore_done, tranz_as_done;
+wire tranz_div_shift_comp,tranz_div_restore_done, tranz_as_done, tranz_load_early;
 and(tranz_idle,stare_idle,start);
-and(tranz_load_mul,stare_load,op_is_mul);
+and(tranz_load_mul,stare_load,op_is_mul,not_early_exit);
 and(tranz_mul_done,stare_mul,cnt_done_mul);
 buf(tranz_div_shift_comp,stare_div_shift);
 and(tranz_div_restore_done,stare_div_restore,cnt_done_div);
 buf(tranz_as_done, stare_as);
-or(next_stare[0],tranz_idle,tranz_load_mul,tranz_mul_done,tranz_div_shift_comp,tranz_div_restore_done,tranz_as_done);
+and(tranz_load_early, stare_load, early_exit);
+or(next_stare[0],tranz_idle,tranz_load_mul,tranz_mul_done,tranz_div_shift_comp,tranz_div_restore_done,tranz_as_done,tranz_load_early);
 
 // next_stare[1]
 wire tranz_load_as, tranz_load_mul_ns1, tranz_mul_stay;
 wire tranz_mul_done_ns1, tranz_as_ns1, tranz_comp_restore, tranz_restore_done_ns1;
 and(tranz_load_as,stare_load,op_is_as);
-and(tranz_load_mul_ns1,stare_load,op_is_mul);
+and(tranz_load_mul_ns1,stare_load,op_is_mul,not_early_exit);
 and(tranz_mul_stay,stare_mul,not_cnt_done_mul);
 and(tranz_mul_done_ns1,stare_mul,cnt_done_mul);
 buf(tranz_as_ns1,stare_as);
 buf(tranz_comp_restore,stare_div_comp);
 and(tranz_restore_done_ns1,stare_div_restore,cnt_done_div);
-or(next_stare[1],tranz_load_as,tranz_load_mul_ns1,tranz_mul_stay,tranz_mul_done_ns1,tranz_as_ns1,tranz_comp_restore,tranz_restore_done_ns1);
+or(next_stare[1],tranz_load_as,tranz_load_mul_ns1,tranz_mul_stay,tranz_mul_done_ns1,tranz_as_ns1,tranz_comp_restore,tranz_restore_done_ns1,tranz_load_early);
 
 // next_stare[2]
 wire tranz_load_div, tranz_div_shift_ns2, tranz_div_comp_ns2;
 wire tranz_div_restore_shift, tranz_div_restore_done_ns2;
 wire tranz_mul_done_ns2, tranz_as_ns2;
-and(tranz_load_div,stare_load,op_is_div);
+and(tranz_load_div,stare_load,op_is_div,not_early_exit);
 buf(tranz_div_shift_ns2,stare_div_shift);
 buf(tranz_div_comp_ns2,stare_div_comp);
 and(tranz_div_restore_shift,stare_div_restore,not_cnt_done_div);
 and(tranz_div_restore_done_ns2,stare_div_restore,cnt_done_div);
 and(tranz_mul_done_ns2,stare_mul,cnt_done_mul);
 buf(tranz_as_ns2,stare_as);
-or(next_stare[2],tranz_load_div,tranz_div_shift_ns2,tranz_div_comp_ns2,tranz_div_restore_shift,tranz_div_restore_done_ns2,tranz_mul_done_ns2,tranz_as_ns2);
+or(next_stare[2],tranz_load_div,tranz_div_shift_ns2,tranz_div_comp_ns2,tranz_div_restore_shift,tranz_div_restore_done_ns2,tranz_mul_done_ns2,tranz_as_ns2,tranz_load_early);
 
 FF_D ff_s0(.clk(clk), .rst(rst), .d(next_stare[0]), .enable(1'b1), .q(stare[0]));
 FF_D ff_s1(.clk(clk), .rst(rst), .d(next_stare[1]), .enable(1'b1), .q(stare[1]));
@@ -142,7 +161,7 @@ buf(cnt_mul_enable, stare_mul);
 buf(cnt_div_enable, stare_div_shift);
 
 buf(load_phase, stare_load);
-buf(done,       stare_done);
+buf(done,        stare_done);
 
 // cska_op
 wire cska_as,cska_mul, cska_div;
@@ -151,10 +170,9 @@ and(cska_mul,stare_mul,neg);
 and(cska_div,stare_div_comp,q_pos);
 or(cska_op,cska_as,cska_mul,cska_div);
 
-// quot_bit
-wire quot_pos_or_zero;
-or(quot_pos_or_zero,q_pos, q_zero);
-and(quot_bit,quot_pos_or_zero,stare_div_restore);
+// Logica noua pentru cat redundant (+1 / -1)
+and(quot_pos_bit, q_pos, stare_div_restore);
+and(quot_neg_bit, q_neg, stare_div_restore);
 
 //reg_M
 buf(reg_M_load,stare_load);
@@ -171,7 +189,7 @@ or(reg_A_load_int,stare_load, stare_as, stare_mul,
    stare_div_comp,stare_div_restore);
 buf(reg_A_load,reg_A_load_int);
 
-//reg_Q
+//reg_Q 
 wire reg_Q_en_int,reg_Q_load_int;
 or(reg_Q_en_int,stare_load,stare_mul,stare_div_shift,stare_div_comp,stare_div_restore);
 buf(reg_Q_enable,reg_Q_en_int);
@@ -181,5 +199,10 @@ buf(reg_Q_shift_left,stare_div_shift);
 
 or(reg_Q_load_int,stare_load,stare_mul,stare_div_restore);
 buf(reg_Q_load,reg_Q_load_int);
+
+//reg_Q negat
+buf(reg_Qneg_enable, reg_Q_en_int);
+buf(reg_Qneg_load, reg_Q_load_int);
+buf(reg_Qneg_shift_left, stare_div_shift);
 
 endmodule

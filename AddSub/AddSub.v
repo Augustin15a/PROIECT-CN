@@ -9,10 +9,10 @@ module AddSub(
 );
 
 buf(cska_op, op);
-buf(reg_A_load,   1'b1);
-buf(reg_A_enable, 1'b1);
-buf(reg_M_load,   1'b1);
-buf(reg_M_enable, 1'b1);
+buf(reg_A_load,1'b1);
+buf(reg_A_enable,1'b1);
+buf(reg_M_load,1'b1);
+buf(reg_M_enable,1'b1);
 buf(done, 1'b1);
 
 endmodule

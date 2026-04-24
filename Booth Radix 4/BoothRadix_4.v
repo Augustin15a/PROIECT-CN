@@ -5,8 +5,7 @@ module BoothRadix_4(
     input neg,
     input twoM,
     input zero,
-    output [8:0]operand,
-    output cska_op
+    output [8:0]operand
 );
 
 wire [8:0] M_9biti;
@@ -45,6 +44,5 @@ generate
     end
 endgenerate
 
-buf(cska_op, neg);
 
 endmodule

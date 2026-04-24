@@ -12,7 +12,7 @@ module Register #(
     input shift_left,
     input shift2_right,
 	input enable,
-    output reg [p - 1:0] q
+    output [p - 1:0] q
 );
 
 generate

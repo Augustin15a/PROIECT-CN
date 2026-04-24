@@ -46,7 +46,7 @@ generate
     else
 	begin : facgen_16
 		wire done_16;
-		and(done_16, q[4], not_q[3], not_q[2], not_q[1], not_q[0]);
+		and(done_16, q[3], not_q[2], not_q[1], not_q[0]);
         buf(done, done_16);
 	end
 endgenerate
