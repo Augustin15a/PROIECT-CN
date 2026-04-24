@@ -1,6 +1,3 @@
-`include "FF_D.v"
-`include "BoothEncoder.v"
-
 module ControlUnit(
     input clk,
     input rst,
@@ -46,6 +43,7 @@ module ControlUnit(
     output cnt_mul_enable,
     output cnt_div_enable
 );
+
 wire [1:0] not_op;
 not(not_op[0],op[0]);
 not(not_op[1],op[1]);
@@ -93,7 +91,6 @@ not(not_early_exit, early_exit);
 wire not_a_msb;
 not(not_a_msb,a_msb);
 
-//alege operatia booth
 BoothEncoder enc(
     .y    (reg_Q_low),
     .neg  (neg),
@@ -180,13 +177,11 @@ buf(reg_M_enable,stare_load);
 
 //reg_A
 wire reg_A_en_int,reg_A_load_int;
-or(reg_A_en_int,stare_load,stare_as,stare_mul,
-   stare_div_shift,stare_div_comp,stare_div_restore);
+or(reg_A_en_int,stare_load,stare_as,stare_mul,stare_div_shift,stare_div_comp,stare_div_restore);
 buf(reg_A_enable,reg_A_en_int);
 buf(reg_A_shift_left,stare_div_shift);
 
-or(reg_A_load_int,stare_load, stare_as, stare_mul,
-   stare_div_comp,stare_div_restore);
+or(reg_A_load_int,stare_load, stare_as, stare_mul,stare_div_comp,stare_div_restore);
 buf(reg_A_load,reg_A_load_int);
 
 //reg_Q 

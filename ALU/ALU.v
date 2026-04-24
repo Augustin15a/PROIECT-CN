@@ -1,10 +1,3 @@
-`include "Register.v"
-`include "CSkA.v"
-`include "ControlUnit.v"
-`include "BoothRadix_4.v"
-`include "SRT_Radix2.v"
-`include "Counter.v"
-`include "MUX2_1.v"
 
 module ALU(
     input clk,

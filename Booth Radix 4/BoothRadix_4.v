@@ -1,11 +1,9 @@
-`include "MUX.v"
-
 module BoothRadix_4(
     input [7:0] reg_M,
     input neg,
     input twoM,
     input zero,
-    output [8:0]operand
+    output [8:0] operand
 );
 
 wire [8:0] M_9biti;
@@ -30,7 +28,6 @@ generate
 endgenerate
 //
 
-
 wire not_zero;
 not(not_zero, zero);
 
@@ -43,6 +40,5 @@ generate
         and(operand[k], sel_out, not_zero);
     end
 endgenerate
-
 
 endmodule

@@ -1,4 +1,3 @@
-`include "MUX2_1.v"
 
 module SRT_Radix2(
     input [7:0]reg_M,

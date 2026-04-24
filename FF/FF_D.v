@@ -1,4 +1,4 @@
-`include "MUX.v"
+
 module FF_D(
 	input  rst,clk,
 	input d,
